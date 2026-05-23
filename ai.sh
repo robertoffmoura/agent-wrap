@@ -22,7 +22,13 @@ echo "⚠️ Network: Full Egress (Proxy filtering not yet applied)"
 
 # 3. Set Agent-Specific YOLO Environment Variables
 if [ "$AGENT" = "gemini" ]; then
-    YOLO_ENV="-e GEMINI_YOLO_MODE=true"
+    # Ensure API Key is present for Gemini
+    if [ -z "$GEMINI_API_KEY" ]; then
+        echo "❌ Error: GEMINI_API_KEY environment variable is missing!"
+        echo "Please set it in your ~/.zprofile"
+        exit 1
+    fi
+    YOLO_ENV="-e GEMINI_YOLO_MODE=true -e GEMINI_API_KEY=$GEMINI_API_KEY"
 else
     YOLO_ENV="-e OPENCODE_YOLO=1"
 fi
