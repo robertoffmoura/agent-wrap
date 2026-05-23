@@ -45,11 +45,12 @@ if [ "$AGENT" = "gemini" ]; then
 }
 EOF
 
-    YOLO_ENV="-e GEMINI_YOLO_MODE=true \
-        -e GEMINI_API_KEY=$GEMINI_API_KEY \
+    YOLO_ENV="-e GEMINI_API_KEY=$GEMINI_API_KEY \
         -e GEMINI_CLI_TRUST_WORKSPACE=true"
+    FLAGS="--yolo"
 else
     YOLO_ENV="-e OPENCODE_YOLO=1"
+    FLAGS=""
 fi
 
 # Append $RANDOM to guarantee a unique container name for every instance
@@ -64,4 +65,4 @@ docker run -it --rm \
   -v "$WORKSPACE:/workspace:rw" \
   -v "$MEMORY_DIR:$TARGET_MOUNT" \
   $YOLO_ENV \
-  "docker/sandbox-templates:$AGENT" $AGENT "$@"
+  "docker/sandbox-templates:$AGENT" $AGENT $FLAGS "$@"
