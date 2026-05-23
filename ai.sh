@@ -19,7 +19,7 @@ WORKSPACE=$(pwd)
 # 3. This folder stores all the UUID sessions permanently on your Mac
 MEMORY_DIR="$HOME/.${AGENT}-cli-state"
 mkdir -p "$MEMORY_DIR"
-TARGET_MOUNT="/root/.$AGENT"
+TARGET_MOUNT="/home/agent/.$AGENT"
 
 echo "Starting $AGENT in YOLO mode..."
 echo "✅ Workspace (Read/Write): $WORKSPACE"
@@ -33,6 +33,17 @@ if [ "$AGENT" = "gemini" ]; then
         echo "Please set it in your ~/.bash_profile"
         exit 1
     fi
+
+    # Pre-select the API key method to bypass the interactive prompt
+    cat <<EOF > "$MEMORY_DIR/settings.json"
+{
+  "security": {
+    "auth": {
+      "selectedType": "gemini-api-key"
+    }
+  }
+}
+EOF
 
     YOLO_ENV="-e GEMINI_YOLO_MODE=true \
         -e GEMINI_API_KEY=$GEMINI_API_KEY \
