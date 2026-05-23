@@ -16,19 +16,27 @@ shift
 # 2. Get the current directory (Workspace)
 WORKSPACE=$(pwd)
 
+# 3. This folder stores all the UUID sessions permanently on your Mac
+MEMORY_DIR="$HOME/.${AGENT}-cli-state"
+mkdir -p "$MEMORY_DIR"
+TARGET_MOUNT="/root/.$AGENT"
+
 echo "Starting $AGENT in YOLO mode..."
 echo "✅ Workspace (Read/Write): $WORKSPACE"
 echo "⚠️ Network: Full Egress (Proxy filtering not yet applied)"
 
-# 3. Set Agent-Specific YOLO Environment Variables
+# 4. Set Agent-Specific YOLO Environment Variables
 if [ "$AGENT" = "gemini" ]; then
     # Ensure API Key is present for Gemini
     if [ -z "$GEMINI_API_KEY" ]; then
         echo "❌ Error: GEMINI_API_KEY environment variable is missing!"
-        echo "Please set it in your ~/.zprofile"
+        echo "Please set it in your ~/.bash_profile"
         exit 1
     fi
-    YOLO_ENV="-e GEMINI_YOLO_MODE=true -e GEMINI_API_KEY=$GEMINI_API_KEY"
+
+    YOLO_ENV="-e GEMINI_YOLO_MODE=true \
+        -e GEMINI_API_KEY=$GEMINI_API_KEY \
+        -e GEMINI_CLI_TRUST_WORKSPACE=true"
 else
     YOLO_ENV="-e OPENCODE_YOLO=1"
 fi
@@ -36,12 +44,13 @@ fi
 # Append $RANDOM to guarantee a unique container name for every instance
 CONTAINER_NAME="${AGENT}-yolo-$(basename "$WORKSPACE")-$RANDOM"
 
-# 4. Execute the Sandbox
+# 5. Execute the Sandbox
 # - --workdir: Drops the agent exactly where you are
 # - :rw gives write access ONLY to the current directory
 docker run -it --rm \
   --name "$CONTAINER_NAME" \
   --workdir /workspace \
   -v "$WORKSPACE:/workspace:rw" \
+  -v "$MEMORY_DIR:$TARGET_MOUNT" \
   $YOLO_ENV \
   "docker/sandbox-templates:$AGENT" "$@"
