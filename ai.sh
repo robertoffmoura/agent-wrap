@@ -64,4 +64,4 @@ docker run -it --rm \
   -v "$WORKSPACE:/workspace:rw" \
   -v "$MEMORY_DIR:$TARGET_MOUNT" \
   $YOLO_ENV \
-  "docker/sandbox-templates:$AGENT" "$@"
+  "docker/sandbox-templates:$AGENT" $AGENT "$@"
