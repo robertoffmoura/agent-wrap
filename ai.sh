@@ -33,11 +33,14 @@ else
     YOLO_ENV="-e OPENCODE_YOLO=1"
 fi
 
+# Append $RANDOM to guarantee a unique container name for every instance
+CONTAINER_NAME="${AGENT}-yolo-$(basename "$WORKSPACE")-$RANDOM"
+
 # 4. Execute the Sandbox
 # - --workdir: Drops the agent exactly where you are
 # - :rw gives write access ONLY to the current directory
 docker run -it --rm \
-  --name "${AGENT}-yolo-$(basename "$WORKSPACE")" \
+  --name "$CONTAINER_NAME" \
   --workdir /workspace \
   -v "$WORKSPACE:/workspace:rw" \
   $YOLO_ENV \
