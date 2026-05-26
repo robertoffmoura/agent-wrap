@@ -4,9 +4,9 @@
 AGENT=$1
 
 # 1. Verify the Agent Argument
-if [[ "$AGENT" != "gemini" && "$AGENT" != "opencode" ]]; then
-    echo "❌ Error: First argument must be 'gemini' or 'opencode'."
-    echo "Usage: ai.sh <gemini|opencode> [additional args]"
+if [[ "$AGENT" != "gemini" && "$AGENT" != "opencode" && "$AGENT" != "agy" ]]; then
+    echo "❌ Error: First argument must be 'gemini', 'opencode' or 'agy'."
+    echo "Usage: ai.sh <gemini|opencode|agy> [additional args]"
     exit 1
 fi
 
@@ -20,6 +20,8 @@ WORKSPACE=$(pwd)
 MEMORY_DIR="$HOME/.${AGENT}-cli-state"
 mkdir -p "$MEMORY_DIR"
 TARGET_MOUNT="/home/agent/.$AGENT"
+FLAGS=""
+IMAGE_REF="docker/sandbox-templates:$AGENT"
 
 echo "Starting $AGENT in YOLO mode..."
 echo "✅ Workspace (Read/Write): $WORKSPACE"
@@ -48,9 +50,11 @@ EOF
     YOLO_ENV="-e GEMINI_API_KEY=$GEMINI_API_KEY \
         -e GEMINI_CLI_TRUST_WORKSPACE=true"
     FLAGS="--yolo"
+elif [ "$AGENT" = "agy" ]; then
+    IMAGE_REF="custom-sandbox:antigravity"
+    TARGET_MOUNT="/home/agent/.gemini"
 else
     YOLO_ENV="-e OPENCODE_YOLO=1"
-    FLAGS=""
 fi
 
 # Append $RANDOM to guarantee a unique container name for every instance
@@ -65,4 +69,4 @@ docker run -it --rm \
   -v "$WORKSPACE:/workspace:rw" \
   -v "$MEMORY_DIR:$TARGET_MOUNT" \
   $YOLO_ENV \
-  "docker/sandbox-templates:$AGENT" $AGENT $FLAGS "$@"
+  $IMAGE_REF $AGENT $FLAGS "$@"
