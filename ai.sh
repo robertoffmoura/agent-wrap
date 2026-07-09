@@ -64,14 +64,11 @@ elif [ "$AGENT" = "grok" ]; then
         docker build -t "$IMAGE_REF" "$SCRIPT_DIR/grok"
     fi
 
-    # Non-browser auth for containers (see https://docs.x.ai/build/overview)
-    if [ -z "$XAI_API_KEY" ]; then
-        echo "❌ Error: XAI_API_KEY environment variable is missing!"
-        echo "Please set it in your ~/.bash_profile (or export it for this shell)."
-        exit 1
+    # Prefer XAI_API_KEY when set; otherwise Grok falls back to browser OAuth
+    # (same pattern as antigravity — auth tokens land in the mounted state dir).
+    if [ -n "$XAI_API_KEY" ]; then
+        YOLO_ENV="-e XAI_API_KEY=$XAI_API_KEY"
     fi
-
-    YOLO_ENV="-e XAI_API_KEY=$XAI_API_KEY"
     # Auto-approve tools — Grok's equivalent of gemini --yolo
     FLAGS="--always-approve"
 else
