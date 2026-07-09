@@ -1,5 +1,5 @@
 #!/bin/bash
-# ai - A strict execution wrapper for AI agents
+# agent-wrap (aw) - A strict execution wrapper for AI agents
 
 AGENT=$1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # 1. Verify the Agent Argument
 if [[ "$AGENT" != "gemini" && "$AGENT" != "opencode" && "$AGENT" != "agy" && "$AGENT" != "grok" ]]; then
     echo "❌ Error: First argument must be 'gemini', 'opencode', 'agy' or 'grok'."
-    echo "Usage: ai.sh <gemini|opencode|agy|grok> [additional args]"
+    echo "Usage: aw <gemini|opencode|agy|grok> [additional args]"
     exit 1
 fi
 
