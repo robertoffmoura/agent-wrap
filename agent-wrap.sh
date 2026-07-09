@@ -5,9 +5,9 @@ AGENT=$1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # 1. Verify the Agent Argument
-if [[ "$AGENT" != "gemini" && "$AGENT" != "opencode" && "$AGENT" != "agy" && "$AGENT" != "grok" ]]; then
-    echo "❌ Error: First argument must be 'gemini', 'opencode', 'agy' or 'grok'."
-    echo "Usage: aw <gemini|opencode|agy|grok> [additional args]"
+if [[ "$AGENT" != "opencode" && "$AGENT" != "agy" && "$AGENT" != "grok" ]]; then
+    echo "❌ Error: First argument must be 'opencode', 'agy' or 'grok'."
+    echo "Usage: aw <opencode|agy|grok> [additional args]"
     exit 1
 fi
 
@@ -30,29 +30,7 @@ echo "✅ Workspace (Read/Write): $WORKSPACE"
 echo "⚠️ Network: Full Egress (Proxy filtering not yet applied)"
 
 # 4. Set Agent-Specific YOLO Environment Variables
-if [ "$AGENT" = "gemini" ]; then
-    # Ensure API Key is present for Gemini
-    if [ -z "$GEMINI_API_KEY" ]; then
-        echo "❌ Error: GEMINI_API_KEY environment variable is missing!"
-        echo "Please set it in your ~/.bash_profile"
-        exit 1
-    fi
-
-    # Pre-select the API key method to bypass the interactive prompt
-    cat <<EOF > "$MEMORY_DIR/settings.json"
-{
-  "security": {
-    "auth": {
-      "selectedType": "gemini-api-key"
-    }
-  }
-}
-EOF
-
-    YOLO_ENV="-e GEMINI_API_KEY=$GEMINI_API_KEY \
-        -e GEMINI_CLI_TRUST_WORKSPACE=true"
-    FLAGS="--yolo"
-elif [ "$AGENT" = "agy" ]; then
+if [ "$AGENT" = "agy" ]; then
     IMAGE_REF="custom-sandbox:antigravity"
     TARGET_MOUNT="/home/agent/.gemini"
 elif [ "$AGENT" = "grok" ]; then
@@ -69,7 +47,7 @@ elif [ "$AGENT" = "grok" ]; then
     if [ -n "$XAI_API_KEY" ]; then
         YOLO_ENV="-e XAI_API_KEY=$XAI_API_KEY"
     fi
-    # Auto-approve tools — Grok's equivalent of gemini --yolo
+    # Auto-approve tools
     FLAGS="--always-approve"
 else
     YOLO_ENV="-e OPENCODE_YOLO=1"
