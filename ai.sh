@@ -2,11 +2,12 @@
 # ai - A strict execution wrapper for AI agents
 
 AGENT=$1
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # 1. Verify the Agent Argument
-if [[ "$AGENT" != "gemini" && "$AGENT" != "opencode" && "$AGENT" != "agy" ]]; then
-    echo "❌ Error: First argument must be 'gemini', 'opencode' or 'agy'."
-    echo "Usage: ai.sh <gemini|opencode|agy> [additional args]"
+if [[ "$AGENT" != "gemini" && "$AGENT" != "opencode" && "$AGENT" != "agy" && "$AGENT" != "grok" ]]; then
+    echo "❌ Error: First argument must be 'gemini', 'opencode', 'agy' or 'grok'."
+    echo "Usage: ai.sh <gemini|opencode|agy|grok> [additional args]"
     exit 1
 fi
 
@@ -22,6 +23,7 @@ mkdir -p "$MEMORY_DIR"
 TARGET_MOUNT="/home/agent/.$AGENT"
 FLAGS=""
 IMAGE_REF="docker/sandbox-templates:$AGENT"
+YOLO_ENV=""
 
 echo "Starting $AGENT in YOLO mode..."
 echo "✅ Workspace (Read/Write): $WORKSPACE"
@@ -53,6 +55,25 @@ EOF
 elif [ "$AGENT" = "agy" ]; then
     IMAGE_REF="custom-sandbox:antigravity"
     TARGET_MOUNT="/home/agent/.gemini"
+elif [ "$AGENT" = "grok" ]; then
+    # No official docker/sandbox-templates:grok image — use a custom build
+    # (same approach as antigravity).
+    IMAGE_REF="custom-sandbox:grok"
+    if ! docker image inspect "$IMAGE_REF" >/dev/null 2>&1; then
+        echo "Building custom Grok sandbox image (first run)..."
+        docker build -t "$IMAGE_REF" "$SCRIPT_DIR/grok"
+    fi
+
+    # Non-browser auth for containers (see https://docs.x.ai/build/overview)
+    if [ -z "$XAI_API_KEY" ]; then
+        echo "❌ Error: XAI_API_KEY environment variable is missing!"
+        echo "Please set it in your ~/.bash_profile (or export it for this shell)."
+        exit 1
+    fi
+
+    YOLO_ENV="-e XAI_API_KEY=$XAI_API_KEY"
+    # Auto-approve tools — Grok's equivalent of gemini --yolo
+    FLAGS="--always-approve"
 else
     YOLO_ENV="-e OPENCODE_YOLO=1"
 fi
