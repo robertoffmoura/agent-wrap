@@ -4,6 +4,12 @@
 AGENT=$1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Ensure OrbStack (Docker engine) is running
+if ! orb status >/dev/null 2>&1; then
+    echo "Starting OrbStack..."
+    orb start
+fi
+
 # 1. Verify the Agent Argument
 if [[ "$AGENT" != "opencode" && "$AGENT" != "agy" && "$AGENT" != "grok" ]]; then
     echo "❌ Error: First argument must be 'opencode', 'agy' or 'grok'."
