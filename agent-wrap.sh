@@ -67,6 +67,7 @@ CONTAINER_NAME="${AGENT}-yolo-$(basename "$WORKSPACE")-$RANDOM"
 # - :rw gives write access ONLY to the current directory
 docker run -it --rm \
   --name "$CONTAINER_NAME" \
+  -e TERM="$TERM" \
   --workdir /workspace \
   -v "$WORKSPACE:/workspace:rw" \
   -v "$MEMORY_DIR:$TARGET_MOUNT" \
