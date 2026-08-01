@@ -30,6 +30,7 @@ TARGET_MOUNT="/home/agent/.$AGENT"
 FLAGS=""
 IMAGE_REF="docker/sandbox-templates:$AGENT"
 YOLO_ENV=""
+CONFIG_MOUNT=""
 
 echo "Starting $AGENT in YOLO mode..."
 echo "✅ Workspace (Read/Write): $WORKSPACE"
@@ -55,8 +56,11 @@ elif [ "$AGENT" = "grok" ]; then
     fi
     # Auto-approve tools
     FLAGS="--always-approve"
-else
+elif [ "$AGENT" = "opencode" ]; then
     YOLO_ENV="-e OPENCODE_YOLO=1"
+    if [ -f "$HOME/.config/opencode/opencode.json" ]; then
+        CONFIG_MOUNT="-v $HOME/.config/opencode/opencode.json:/home/agent/.config/opencode/opencode.json:ro"
+    fi
 fi
 
 # Append $RANDOM to guarantee a unique container name for every instance
@@ -72,4 +76,5 @@ docker run -it --rm \
   -v "$WORKSPACE:/workspace:rw" \
   -v "$MEMORY_DIR:$TARGET_MOUNT" \
   $YOLO_ENV \
+  $CONFIG_MOUNT \
   $IMAGE_REF $AGENT $FLAGS "$@"
