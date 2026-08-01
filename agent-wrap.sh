@@ -58,6 +58,9 @@ elif [ "$AGENT" = "grok" ]; then
     FLAGS="--always-approve"
 elif [ "$AGENT" = "opencode" ]; then
     YOLO_ENV="-e OPENCODE_YOLO=1"
+    if [ -n "$DEEPSEEK_API_KEY" ]; then
+        YOLO_ENV="$YOLO_ENV -e DEEPSEEK_API_KEY=$DEEPSEEK_API_KEY"
+    fi
     if [ -f "$HOME/.config/opencode/opencode.json" ]; then
         CONFIG_MOUNT="-v $HOME/.config/opencode/opencode.json:/home/agent/.config/opencode/opencode.json:ro"
     fi
