@@ -72,7 +72,10 @@ CONTAINER_NAME="${AGENT}-yolo-$(basename "$WORKSPACE")-$RANDOM"
 # 5. Execute the Sandbox
 # - --workdir: Drops the agent exactly where you are
 # - :rw gives write access ONLY to the current directory
-docker run -it --rm \
+# - osc52pty (when installed) intercepts OSC 52 clipboard escapes emitted by
+#   the agent and pipes them into macOS's pbcopy, making copy work even on
+#   Terminal.app (which does not support OSC 52 natively).
+RUN_CMD=(docker run -it --rm \
   --name "$CONTAINER_NAME" \
   -e TERM="$TERM" \
   --workdir /workspace \
@@ -80,4 +83,18 @@ docker run -it --rm \
   -v "$MEMORY_DIR:$TARGET_MOUNT" \
   $YOLO_ENV \
   $CONFIG_MOUNT \
-  $IMAGE_REF $AGENT $FLAGS "$@"
+  $IMAGE_REF $AGENT $FLAGS "$@")
+
+if command -v osc52pty >/dev/null 2>&1; then
+    RUN_CMD=(osc52pty "${RUN_CMD[@]}")
+else
+    echo "Tip: build osc52pty (the @latest release segfaults on modern macOS; this patch is required) to enable clipboard copy from the sandbox on Terminal.app:"
+    echo "  git clone https://github.com/roy2220/osc52pty && cd osc52pty"
+    echo "  sed -i '' 's|golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a|golang.org/x/term v0.30.0|' go.mod"
+    echo "  sed -i '' 's|\"golang.org/x/crypto/ssh/terminal\"|\"golang.org/x/term\"|; s|terminal\\.MakeRaw|term.MakeRaw|g; s|terminal\\.Restore|term.Restore|g' shell.go"
+    echo "  go get github.com/creack/pty@latest && go mod tidy"
+    echo "  go install .   # -> ~/go/bin/osc52pty"
+    echo "  export PATH=\"\$PATH:\$HOME/go/bin\"   # add to ~/.bash_profile if missing"
+fi
+
+"${RUN_CMD[@]}"
