@@ -2,6 +2,10 @@
 # agent-wrap (aw) - A strict execution wrapper for AI agents
 
 AGENT=$1
+# Allow "oc" as a shorthand for "opencode"
+if [ "$AGENT" = "oc" ]; then
+    AGENT="opencode"
+fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Ensure OrbStack (Docker engine) is running
