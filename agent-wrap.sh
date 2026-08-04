@@ -61,7 +61,8 @@ elif [ "$AGENT" = "grok" ]; then
     # Auto-approve tools
     FLAGS="--always-approve"
 elif [ "$AGENT" = "opencode" ]; then
-    YOLO_ENV="-e OPENCODE_YOLO=1"
+    # Auto-approve permissions (--auto; --yolo is a hidden alias).
+    FLAGS="--auto"
     if [ -n "$DEEPSEEK_API_KEY" ]; then
         YOLO_ENV="$YOLO_ENV -e DEEPSEEK_API_KEY=$DEEPSEEK_API_KEY"
     fi
