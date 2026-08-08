@@ -67,7 +67,7 @@ elif [ "$AGENT" = "opencode" ]; then
         YOLO_ENV="$YOLO_ENV -e DEEPSEEK_API_KEY=$DEEPSEEK_API_KEY"
     fi
     if [ -f "$HOME/.config/opencode/opencode.json" ]; then
-        CONFIG_MOUNT="-v $HOME/.config/opencode/opencode.json:/home/agent/.config/opencode/opencode.json:ro"
+        CONFIG_MOUNT="-v $HOME/.config/opencode/opencode.json:/root/.config/opencode/opencode.json:ro"
     fi
 fi
 
