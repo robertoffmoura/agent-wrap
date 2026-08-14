@@ -12,5 +12,5 @@ RUN curl -fsSL https://antigravity.google/cli/install.sh | bash \
 # Drop privileges back down to the isolated agent user
 USER agent
 
-# Set the new Antigravity binary as the default entrypoint
-ENTRYPOINT ["agy"]
+# Keep the base image ENTRYPOINT (tini --) so `docker run <image> agy ...` works.
+CMD ["agy"]
