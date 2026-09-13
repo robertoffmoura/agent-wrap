@@ -6,7 +6,16 @@ AGENT=$1
 if [ "$AGENT" = "oc" ]; then
     AGENT="opencode"
 fi
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve symlinks so SCRIPT_DIR points at the repo, not the dir containing the
+# `aw` symlink (e.g. /usr/local/bin/aw -> .../agent-wrap.sh). Needed to locate
+# the Dockerfile dirs (opencode/, grok/, antigravity/).
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+    DIR="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ "$SOURCE" != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd)"
 
 # Ensure OrbStack (Docker engine) is running
 if ! orb status >/dev/null 2>&1; then
