@@ -51,21 +51,23 @@ echo "✅ Workspace (Read/Write): $WORKSPACE"
 echo "⚠️ Network: Full Egress (Proxy filtering not yet applied)"
 
 # 4. Set Agent-Specific YOLO Environment Variables
+# Build a custom sandbox image on first run if it doesn't exist locally.
+build_image_if_missing() {
+    local image_ref="$1" build_dir="$2" label="$3"
+    if ! docker image inspect "$image_ref" >/dev/null 2>&1; then
+        echo "Building custom $label sandbox image (first run)..."
+        docker build -t "$image_ref" "$build_dir"
+    fi
+}
+
 if [ "$AGENT" = "agy" ]; then
     IMAGE_REF="custom-sandbox:antigravity"
     TARGET_MOUNT="/home/agent/.gemini"
-    if ! docker image inspect "$IMAGE_REF" >/dev/null 2>&1; then
-        echo "Building custom Antigravity sandbox image (first run)..."
-        docker build -t "$IMAGE_REF" "$SCRIPT_DIR/antigravity"
-    fi
+    build_image_if_missing "$IMAGE_REF" "$SCRIPT_DIR/antigravity" "Antigravity"
 elif [ "$AGENT" = "grok" ]; then
-    # No official docker/sandbox-templates:grok image — use a custom build
-    # (same approach as antigravity).
+    # No official docker/sandbox-templates:grok image — use a custom build.
     IMAGE_REF="custom-sandbox:grok"
-    if ! docker image inspect "$IMAGE_REF" >/dev/null 2>&1; then
-        echo "Building custom Grok sandbox image (first run)..."
-        docker build -t "$IMAGE_REF" "$SCRIPT_DIR/grok"
-    fi
+    build_image_if_missing "$IMAGE_REF" "$SCRIPT_DIR/grok" "Grok"
 
     # Prefer XAI_API_KEY when set; otherwise Grok falls back to browser OAuth
     # (same pattern as antigravity — auth tokens land in the mounted state dir).
@@ -77,10 +79,7 @@ elif [ "$AGENT" = "grok" ]; then
 elif [ "$AGENT" = "opencode" ]; then
     # Custom build installs the latest opencode at build time.
     IMAGE_REF="custom-sandbox:opencode"
-    if ! docker image inspect "$IMAGE_REF" >/dev/null 2>&1; then
-        echo "Building custom OpenCode sandbox image (first run)..."
-        docker build -t "$IMAGE_REF" "$SCRIPT_DIR/opencode"
-    fi
+    build_image_if_missing "$IMAGE_REF" "$SCRIPT_DIR/opencode" "OpenCode"
 
     # Auto-approve permissions (--auto; --yolo is a hidden alias).
     FLAGS="--auto"
