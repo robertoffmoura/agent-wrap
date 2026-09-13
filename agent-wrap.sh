@@ -54,6 +54,10 @@ echo "⚠️ Network: Full Egress (Proxy filtering not yet applied)"
 if [ "$AGENT" = "agy" ]; then
     IMAGE_REF="custom-sandbox:antigravity"
     TARGET_MOUNT="/home/agent/.gemini"
+    if ! docker image inspect "$IMAGE_REF" >/dev/null 2>&1; then
+        echo "Building custom Antigravity sandbox image (first run)..."
+        docker build -t "$IMAGE_REF" "$SCRIPT_DIR/antigravity"
+    fi
 elif [ "$AGENT" = "grok" ]; then
     # No official docker/sandbox-templates:grok image — use a custom build
     # (same approach as antigravity).
