@@ -44,6 +44,7 @@ FLAGS=""
 IMAGE_REF="docker/sandbox-templates:$AGENT"
 YOLO_ENV=""
 CONFIG_MOUNT=""
+STATE_MOUNT=""
 
 echo "Starting $AGENT in YOLO mode..."
 echo "✅ Workspace (Read/Write): $WORKSPACE"
@@ -80,6 +81,9 @@ elif [ "$AGENT" = "opencode" ]; then
     # Auto-approve permissions (--auto; --yolo is a hidden alias).
     FLAGS="--auto"
     TARGET_MOUNT="/home/agent/.local/share/opencode"
+    # Persist the model/variant selection (model.json) across containers.
+    mkdir -p "$HOME/.local/state/opencode"
+    STATE_MOUNT="-v $HOME/.local/state/opencode:/home/agent/.local/state/opencode"
     if [ -n "$DEEPSEEK_API_KEY" ]; then
         YOLO_ENV="$YOLO_ENV -e DEEPSEEK_API_KEY=$DEEPSEEK_API_KEY"
     fi
@@ -105,6 +109,7 @@ RUN_CMD=(docker run -it --rm \
   -v "$MEMORY_DIR:$TARGET_MOUNT" \
   $YOLO_ENV \
   $CONFIG_MOUNT \
+  $STATE_MOUNT \
   $IMAGE_REF $AGENT $FLAGS "$@")
 
 if command -v osc52pty >/dev/null 2>&1; then
