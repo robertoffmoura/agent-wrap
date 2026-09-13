@@ -79,12 +79,12 @@ elif [ "$AGENT" = "opencode" ]; then
 
     # Auto-approve permissions (--auto; --yolo is a hidden alias).
     FLAGS="--auto"
-    TARGET_MOUNT="/root/.local/share/opencode"
+    TARGET_MOUNT="/home/agent/.local/share/opencode"
     if [ -n "$DEEPSEEK_API_KEY" ]; then
         YOLO_ENV="$YOLO_ENV -e DEEPSEEK_API_KEY=$DEEPSEEK_API_KEY"
     fi
     if [ -f "$HOME/.config/opencode/opencode.json" ]; then
-        CONFIG_MOUNT="-v $HOME/.config/opencode/opencode.json:/root/.config/opencode/opencode.json:ro"
+        CONFIG_MOUNT="-v $HOME/.config/opencode/opencode.json:/home/agent/.config/opencode/opencode.json:ro"
     fi
 fi
 
