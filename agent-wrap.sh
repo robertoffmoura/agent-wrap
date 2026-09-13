@@ -70,6 +70,13 @@ elif [ "$AGENT" = "grok" ]; then
     # Auto-approve tools
     FLAGS="--always-approve"
 elif [ "$AGENT" = "opencode" ]; then
+    # Custom build installs the latest opencode at build time.
+    IMAGE_REF="custom-sandbox:opencode"
+    if ! docker image inspect "$IMAGE_REF" >/dev/null 2>&1; then
+        echo "Building custom OpenCode sandbox image (first run)..."
+        docker build -t "$IMAGE_REF" "$SCRIPT_DIR/opencode"
+    fi
+
     # Auto-approve permissions (--auto; --yolo is a hidden alias).
     FLAGS="--auto"
     TARGET_MOUNT="/root/.local/share/opencode"
