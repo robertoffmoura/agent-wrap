@@ -6,6 +6,10 @@ AGENT=$1
 if [ "$AGENT" = "oc" ]; then
     AGENT="opencode"
 fi
+# Allow "cc" as a shorthand for "claude"
+if [ "$AGENT" = "cc" ]; then
+    AGENT="claude"
+fi
 # Resolve symlinks so SCRIPT_DIR points at the repo, not the dir containing the
 # `aw` symlink (e.g. /usr/local/bin/aw -> .../agent-wrap.sh). Needed to locate
 # the Dockerfile dirs (opencode/, grok/, antigravity/).
@@ -24,9 +28,9 @@ if ! orb status >/dev/null 2>&1; then
 fi
 
 # 1. Verify the Agent Argument
-if [[ "$AGENT" != "opencode" && "$AGENT" != "agy" && "$AGENT" != "grok" ]]; then
-    echo "❌ Error: First argument must be 'opencode', 'agy' or 'grok'."
-    echo "Usage: aw <opencode|agy|grok> [additional args]"
+if [[ "$AGENT" != "opencode" && "$AGENT" != "agy" && "$AGENT" != "grok" && "$AGENT" != "claude" ]]; then
+    echo "❌ Error: First argument must be 'opencode', 'agy', 'grok' or 'claude'."
+    echo "Usage: aw <opencode|agy|grok|claude> [additional args]"
     exit 1
 fi
 
@@ -93,6 +97,28 @@ elif [ "$AGENT" = "opencode" ]; then
     if [ -f "$HOME/.config/opencode/opencode.json" ]; then
         CONFIG_MOUNT="-v $HOME/.config/opencode/opencode.json:/home/agent/.config/opencode/opencode.json:ro"
     fi
+elif [ "$AGENT" = "claude" ]; then
+    # No official docker/sandbox-templates:claude image — use a custom build.
+    IMAGE_REF="custom-sandbox:claude"
+    build_image_if_missing "$IMAGE_REF" "$SCRIPT_DIR/claude" "Claude Code"
+
+    # Auto-approve tools
+    FLAGS="--dangerously-skip-permissions"
+
+    # Prefer ANTHROPIC_API_KEY when set; otherwise Claude Code falls back to
+    # browser/Console OAuth (same pattern as grok — auth tokens land in the
+    # mounted state dir at ~/.claude/.credentials.json).
+    if [ -n "$ANTHROPIC_API_KEY" ]; then
+        YOLO_ENV="-e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY"
+    fi
+
+    # ~/.claude.json (onboarding/project state) lives outside ~/.claude, so
+    # it needs its own mount to persist across containers. Claude Code treats
+    # an empty file as corrupted JSON, so seed it with an empty object.
+    if [ ! -s "$MEMORY_DIR.json" ]; then
+        echo '{}' > "$MEMORY_DIR.json"
+    fi
+    CONFIG_MOUNT="-v $MEMORY_DIR.json:/home/agent/.claude.json"
 fi
 
 # Append $RANDOM to guarantee a unique container name for every instance
