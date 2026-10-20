@@ -13,6 +13,12 @@ RUN curl -fsSL https://claude.ai/install.sh | bash \
     && chmod +x /usr/local/bin/claude \
     && rm -rf /root/.claude /root/.local
 
+# xclip/wl-paste stand-ins that serve the host clipboard image saved by
+# osc52pty, so Ctrl+V image paste works in the sandbox.
+COPY clipboard-shim.sh /usr/local/bin/xclip
+RUN chmod 755 /usr/local/bin/xclip \
+    && ln -s xclip /usr/local/bin/wl-paste
+
 USER agent
 
 # Keep the base image ENTRYPOINT (tini --) so `docker run <image> claude ...` works.

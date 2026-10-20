@@ -124,32 +124,43 @@ fi
 # Append $RANDOM to guarantee a unique container name for every instance
 CONTAINER_NAME="${AGENT}-yolo-$(basename "$WORKSPACE")-$RANDOM"
 
+# Per-container dir where osc52pty saves the clipboard image on each
+# Ctrl+V; mounted read-only for the xclip/wl-paste shims in the image.
+CLIPBOARD_DIR="$HOME/.agent-wrap/clipboard/$CONTAINER_NAME"
+mkdir -p "$CLIPBOARD_DIR"
+trap 'rm -f "$CLIPBOARD_DIR/clip.png" "$CLIPBOARD_DIR/.clip.png.tmp"; rmdir "$CLIPBOARD_DIR" 2>/dev/null' EXIT
+
 # 5. Execute the Sandbox
 # - --workdir: Drops the agent exactly where you are
 # - :rw gives write access ONLY to the current directory
-# - osc52pty (when installed) intercepts OSC 52 clipboard escapes emitted by
-#   the agent and pipes them into macOS's pbcopy, making copy work even on
-#   Terminal.app (which does not support OSC 52 natively).
+# - osc52pty (when installed; source in osc52pty/) intercepts OSC 52
+#   clipboard escapes emitted by the agent and pipes them into macOS's
+#   pbcopy, making copy work even on Terminal.app (which does not support
+#   OSC 52 natively). It also saves the clipboard image to $CLIPBOARD_DIR on
+#   each Ctrl+V, so image paste works in the sandbox.
 RUN_CMD=(docker run -it --rm \
   --name "$CONTAINER_NAME" \
   -e TERM="$TERM" \
   --workdir /workspace \
   -v "$WORKSPACE:/workspace:rw" \
   -v "$MEMORY_DIR:$TARGET_MOUNT" \
+  -v "$CLIPBOARD_DIR:/run/host-clipboard:ro" \
   $YOLO_ENV \
   $CONFIG_MOUNT \
   $STATE_MOUNT \
   $IMAGE_REF $AGENT $FLAGS "$@")
 
-if command -v osc52pty >/dev/null 2>&1; then
-    RUN_CMD=(osc52pty "${RUN_CMD[@]}")
-else
-    echo "Tip: build osc52pty (the @latest release segfaults on modern macOS; this patch is required) to enable clipboard copy from the sandbox on Terminal.app:"
-    echo "  git clone https://github.com/roy2220/osc52pty && cd osc52pty"
-    echo "  sed -i '' 's|golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a|golang.org/x/term v0.30.0|' go.mod"
-    echo "  sed -i '' 's|\"golang.org/x/crypto/ssh/terminal\"|\"golang.org/x/term\"|; s|terminal\\.MakeRaw|term.MakeRaw|g; s|terminal\\.Restore|term.Restore|g' shell.go"
-    echo "  go get github.com/creack/pty@latest && go mod tidy"
-    echo "  go install .   # -> ~/go/bin/osc52pty"
+OSC52PTY_PATH="$(command -v osc52pty)"
+if [ -n "$OSC52PTY_PATH" ]; then
+    RUN_CMD=(env OSC52PTY_CLIPBOARD_DIR="$CLIPBOARD_DIR" osc52pty "${RUN_CMD[@]}")
+fi
+# Our build embeds the env var name; its absence means an upstream/old build.
+if [ -z "$OSC52PTY_PATH" ] || ! grep -q OSC52PTY_CLIPBOARD_DIR "$OSC52PTY_PATH"; then
+    if [ -n "$OSC52PTY_PATH" ]; then
+        echo "⚠️ $OSC52PTY_PATH is not agent-wrap's build; reinstall it as below for Ctrl+V image paste."
+    fi
+    echo "Tip: install agent-wrap's osc52pty (requires Go) to enable clipboard copy and Ctrl+V image paste in the sandbox on Terminal.app:"
+    echo "  cd \"$SCRIPT_DIR/osc52pty\" && go install .   # -> ~/go/bin/osc52pty"
     echo "  export PATH=\"\$PATH:\$HOME/go/bin\"   # add to ~/.bash_profile if missing"
 fi
 
